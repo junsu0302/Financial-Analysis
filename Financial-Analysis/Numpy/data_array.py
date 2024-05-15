@@ -1,7 +1,6 @@
 import numpy as np
 
 # TODO: 배열 생성
-
 tmp_list = np.array([0, 0.5, 1.0, 1.5, 2.0])
 """ 
 #? numpy를 활용하여 문자열 리스트인 ndarray 객체 a 생성
