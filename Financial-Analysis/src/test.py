@@ -3,28 +3,44 @@ import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
 
-from Valuation.get_year_deltas import get_year_deltas
+from Valuation.market_environment import MarketEnvironment
 from Valuation.constant_short_rate import ConstantShortRate
+from Simulation.geometric_brownian_motion import GeometricBrownianMotion
 
-dates = [dt.datetime(2020, 1, 1), dt.datetime(2020, 7, 1), dt.datetime(2021, 1, 1)]
+#? 시장 환경 설정
+env = MarketEnvironment('env', dt.datetime(2020, 1, 1))
+env.add_constant('initial_value', 36.)
+env.add_constant('volatility', 0.2)
+env.add_constant('final_date', dt.datetime(2020, 12, 31))
+env.add_constant('currency', 'EUR')
+env.add_constant('frequency', 'M')
+env.add_constant('paths', 10000)
 
-csr = ConstantShortRate('csr', 0.05)
+#? 할인율 곡선 설정
+csr = ConstantShortRate('csr', 0.06)
+env.add_curve('discount_curve', csr)
 
-deltas = get_year_deltas(dates)
+#? GBM 시뮬레이션 객체 생성 및 시간 그리드 생성
+gbm = GeometricBrownianMotion('gbm', env)
+gbm.generate_time_grid()
 
-print()
-print('dates')
-for idx in dates:
-  print(idx)
-print()
+#? 낮은 변동성 시뮬레이션
+paths1 = gbm.get_instrument_values()
 
-print('csr.get_discount_factors (dates)')
-print(csr.get_discount_factors(dates))
-print()
+#? 높은 변동성 시뮬레이션
+gbm.update(volatility=0.5)
+paths2 = gbm.get_instrument_values()
 
-print('deltas')
-print(deltas)
-print()
-
-print('get_discount_factors (deltas)')
-print(csr.get_discount_factors(deltas, isDatetime=False))
+#? 시각화
+plt.figure(figsize=(10, 6))
+p1 = plt.plot(gbm.time_grid, paths1[:, :10], 'b')
+p2 = plt.plot(gbm.time_grid, paths2[:, :10], 'r-.')
+l1 = plt.legend([p1[0], p2[0]], ['low volatility', 'high volatility'], loc=2)
+plt.gca().add_artist(l1)
+plt.xticks(rotation=30)
+plt.show()
+"""
+변동성이 자산 가격 경로에 미치는 영향이 크다는 것을 확인할 수 있다.
+변동성이 높을수록 가격의 변동 폭이 커지며, 이는 투자자에게 더 큰 리스크와 더 큰 기회를 제공한다.
+이 시뮬레이션은 옵션 가격 결정, 리스크 관리, 포트폴리오 최적화 등에 활용될 수 있다.
+"""
