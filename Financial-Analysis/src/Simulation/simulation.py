@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import datetime
-from Valuation.market_environment import MarketEnvironment
+from Environment.market_environment import MarketEnvironment
 
 class Simulation():
   """
