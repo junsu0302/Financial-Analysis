@@ -66,23 +66,12 @@ class Simulation():
     except:
       self.special_dates = [] #* 특별 날짜가 없으면 빈 리스트로 설정
 
-  def update(self, initial_value:float=None, volatility:float=None, final_date:datetime=None):
-    """시뮬레이션 속성 업데이트 (구현 필요)
-
-    Args:
-      initial_value (float, optional): 초기 자산 가격
-      volatility (float, optional): 자산 가격 변동성
-      final_date (datetime, optional): 시뮬레이션 종료 날짜
-    """
+  def update():
+    """시뮬레이션 속성 업데이트 (구현 필요)"""
     raise NotImplementedError("The method update() must be implemented in subclasses")
 
-  def generate_paths(self, fixed_seed:bool=False, day_count:float=365.):
-    """시뮬레이션 경로 생성 (구현 필요)
-
-    Args:
-      fixed_seed (bool, optional): 고정된 시드 사용 여부 (기본값은 False)
-      day_count (float, optional): 1년의 날짜 수 (기본값은 365.)
-    """
+  def generate_paths():
+    """시뮬레이션 경로 생성 (구현 필요)"""
     raise NotImplementedError("The method generate_paths() must be implemented in subclasses")
 
   def generate_time_grid(self):

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from Valuation.market_environment import MarketEnvironment
 from Valuation.constant_short_rate import ConstantShortRate
 from Simulation.geometric_brownian_motion import GeometricBrownianMotion
+from Simulation.jump_diffusion import JumpDiffusion
 
 #? 시장 환경 설정
 env = MarketEnvironment('env', dt.datetime(2020, 1, 1))
@@ -15,6 +16,9 @@ env.add_constant('final_date', dt.datetime(2020, 12, 31))
 env.add_constant('currency', 'EUR')
 env.add_constant('frequency', 'M')
 env.add_constant('paths', 10000)
+env.add_constant('lambda', 0.3)
+env.add_constant('mu', -0.75)
+env.add_constant('delta', 0.1)
 
 #? 할인율 곡선 설정
 csr = ConstantShortRate('csr', 0.06)
@@ -24,12 +28,15 @@ env.add_curve('discount_curve', csr)
 gbm = GeometricBrownianMotion('gbm', env)
 gbm.generate_time_grid()
 
-#? 낮은 변동성 시뮬레이션
-paths1 = gbm.get_instrument_values()
+#? JB 시뮬레이션 객체 생성
+jd = JumpDiffusion('jd', env)
 
-#? 높은 변동성 시뮬레이션
-gbm.update(volatility=0.5)
-paths2 = gbm.get_instrument_values()
+#? 낮은 점프 강도 시뮬레이션
+paths1 = jd.get_instrument_values()
+
+#? 높은 점프 강도 시뮬레이션
+jd.update(lamb=0.9)
+paths2 = jd.get_instrument_values()
 
 #? 시각화
 plt.figure(figsize=(10, 6))
