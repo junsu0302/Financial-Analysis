@@ -1,5 +1,5 @@
 import numpy as np
-from Valuation.get_year_deltas import get_year_deltas
+from Utils.get_year_deltas import get_year_deltas
 
 class ConstantShortRate():
   """고정 단기 이자율을 사용하여 할인율을 계산하는 클래스

@@ -1,6 +1,6 @@
 import datetime
 import numpy as np
-from Valuation.market_environment import MarketEnvironment
+from Environment.market_environment import MarketEnvironment
 from Simulation.simulation import Simulation
 from Simulation.sn_random_numbers import sn_random_numbers
 
