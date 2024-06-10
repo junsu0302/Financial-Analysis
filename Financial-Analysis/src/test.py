@@ -73,53 +73,100 @@ portfolio = DerivativesPortfolio(name='portfolio',
                                  positions=positions,
                                  valuation_env=valuation_env,
                                  assets=underlyings,
+                                 correlations=[['gbm', 'jd', 0.]],
                                  fixed_seed=False)
+portfolio_corr = DerivativesPortfolio(name='portfolio_corr',
+                                      positions=positions,
+                                      valuation_env=valuation_env,
+                                      assets=underlyings,
+                                      correlations=[['gbm', 'jd', 0.9]],
+                                      fixed_seed=True)
 
 #? 시각화를 위한 특정 경로 선택
 path_no = 888
 path_gbm = portfolio.underlying_objects['gbm'].get_instrument_values()[:, path_no]
 path_jd = portfolio.underlying_objects['jd'].get_instrument_values()[:, path_no]
+path_gbm_corr = portfolio_corr.underlying_objects['gbm'].get_instrument_values()[:, path_no]
+path_jd_corr = portfolio_corr.underlying_objects['jd'].get_instrument_values()[:, path_no]
+
 
 #? 세 개의 가로형 서브플롯 생성
-fig, axs = plt.subplots(1, 3, figsize=(20, 5))
+fig, axs = plt.subplots(2, 3, figsize=(20, 10))
 
 #? 첫 번째 서브플롯: GBM 및 JD 모델 경로 시각화
-axs[0].plot(portfolio.time_grid, path_gbm, 'r', label='gbm')
-axs[0].plot(portfolio.time_grid, path_jd, 'b', label='jd')
-axs[0].set_title('GBM and JD Paths')
-axs[0].set_xlabel('Time')
-axs[0].set_ylabel('Value')
-axs[0].legend(loc='best')
-axs[0].tick_params(axis='x', rotation=30)
+axs[0, 0].plot(portfolio.time_grid, path_gbm, 'r', label='gbm')
+axs[0, 0].plot(portfolio.time_grid, path_jd, 'b', label='jd')
+axs[0, 0].set_title('GBM and JD Paths')
+axs[0, 0].set_xlabel('Time')
+axs[0, 0].set_ylabel('Value')
+axs[0, 0].legend(loc='best')
+axs[0, 0].tick_params(axis='x', rotation=30)
 
 #? 두 번째 서브플롯: 개별 옵션 포지션의 현재 가치 히스토그램
 pv1 = 5 * portfolio.valuation_objects['EUR_CALL_POS'].present_value(full=True)[1]
 pv2 = 3 * portfolio.valuation_objects['AM_PUT_POS'].present_value(full=True)[1]
-axs[1].hist([pv1, pv2], bins=25, label=['European call', 'American put'])
-axs[1].axvline(pv1.mean(), color='r', ls='dashed', lw=1.5, label='call mean: %4.2f' % pv1.mean())
-axs[1].axvline(pv2.mean(), color='r', ls='dotted', lw=1.5, label='put mean: %4.2f' % pv2.mean())
-axs[1].set_title('Histogram of Option Values')
-axs[1].set_xlabel('Present Value')
-axs[1].set_ylabel('Frequency')
-axs[1].set_xlim(0, 80)
-axs[1].set_ylim(1, 10000)
-axs[1].legend()
+axs[0, 1].hist([pv1, pv2], bins=25, label=['European call', 'American put'])
+axs[0, 1].axvline(pv1.mean(), color='r', ls='dashed', lw=1.5, label='call mean: %4.2f' % pv1.mean())
+axs[0, 1].axvline(pv2.mean(), color='r', ls='dotted', lw=1.5, label='put mean: %4.2f' % pv2.mean())
+axs[0, 1].set_title('Histogram of Option Values')
+axs[0, 1].set_xlabel('Present Value')
+axs[0, 1].set_ylabel('Frequency')
+axs[0, 1].set_xlim(0, 80)
+axs[0, 1].set_ylim(1, 10000)
+axs[0, 1].legend()
 
 #? 세 번째 서브플롯: 포트폴리오 가치 및 표준편차 시각화
 portfolio_values = pv1 + pv2
 portfolio_std = portfolio_values.std()
 
-axs[2].hist(portfolio_values, bins=50, label='Portfolio Values')
-axs[2].axvline(portfolio_values.mean(), color='r', ls='dashed', lw=1.5, label='Mean: %4.2f' % portfolio_values.mean())
-axs[2].axvline(portfolio_values.mean() + portfolio_std, color='g', ls='dashed', lw=1.5, label='Mean + 1 Std: %4.2f' % (portfolio_values.mean() + portfolio_std))
-axs[2].axvline(portfolio_values.mean() - portfolio_std, color='g', ls='dashed', lw=1.5, label='Mean - 1 Std: %4.2f' % (portfolio_values.mean() - portfolio_std))
-axs[2].set_title('Portfolio Values with Std Dev')
-axs[2].set_xlabel('Present Value')
-axs[2].set_ylabel('Frequency')
-axs[2].set_xlim(0, 80)
-axs[2].set_ylim(0, 5000)
-axs[2].legend()
+axs[0, 2].hist(portfolio_values, bins=50, label='Portfolio Values')
+axs[0, 2].axvline(portfolio_values.mean(), color='r', ls='dashed', lw=1.5, label='Mean: %4.2f' % portfolio_values.mean())
+axs[0, 2].axvline(portfolio_values.mean() + portfolio_std, color='g', ls='dashed', lw=1.5, label='Mean + 1 Std: %4.2f' % (portfolio_values.mean() + portfolio_std))
+axs[0, 2].axvline(portfolio_values.mean() - portfolio_std, color='g', ls='dashed', lw=1.5, label='Mean - 1 Std: %4.2f' % (portfolio_values.mean() - portfolio_std))
+axs[0, 2].set_title('Portfolio Values with Std Dev')
+axs[0, 2].set_xlabel('Present Value')
+axs[0, 2].set_ylabel('Frequency')
+axs[0, 2].set_xlim(0, 80)
+axs[0, 2].set_ylim(0, 5000)
+axs[0, 2].legend()
+
+#? 네 번째 서브플롯: GBM 및 JD 모델 경로 시각화 (상관 관계 포함)
+axs[1, 0].plot(portfolio_corr.time_grid, path_gbm_corr, 'r', label='gbm')
+axs[1, 0].plot(portfolio_corr.time_grid, path_jd_corr, 'b', label='jd')
+axs[1, 0].set_title('GBM and JD Paths with Correlation')
+axs[1, 0].set_xlabel('Time')
+axs[1, 0].set_ylabel('Value')
+axs[1, 0].legend(loc='best')
+axs[1, 0].tick_params(axis='x', rotation=30)
+
+#? 다섯 번째 서브플롯: 개별 옵션 포지션의 현재 가치 히스토그램
+pv1_corr = 5 * portfolio_corr.valuation_objects['EUR_CALL_POS'].present_value(full=True)[1]
+pv2_corr = 3 * portfolio_corr.valuation_objects['AM_PUT_POS'].present_value(full=True)[1]
+axs[1, 1].hist([pv1_corr, pv2_corr], bins=25, label=['European call', 'American put'])
+axs[1, 1].axvline(pv1_corr.mean(), color='r', ls='dashed', lw=1.5, label='call mean: %4.2f' % pv1_corr.mean())
+axs[1, 1].axvline(pv2_corr.mean(), color='r', ls='dotted', lw=1.5, label='put mean: %4.2f' % pv2_corr.mean())
+axs[1, 1].set_title('Histogram of Option Values with Correlation')
+axs[1, 1].set_xlabel('Present Value')
+axs[1, 1].set_ylabel('Frequency')
+axs[1, 1].set_xlim(0, 80)
+axs[1, 1].set_ylim(1, 10000)
+axs[1, 1].legend()
+
+#? 여섯 번째 서브플롯: 포트폴리오 가치 및 표준편차 시각화
+portfolio_values_corr = pv1_corr + pv2_corr
+portfolio_std_corr = portfolio_values_corr.std()
+
+axs[1, 2].hist(portfolio_values_corr, bins=50, label='Portfolio Values')
+axs[1, 2].axvline(portfolio_values_corr.mean(), color='r', ls='dashed', lw=1.5, label='Mean: %4.2f' % portfolio_values_corr.mean())
+axs[1, 2].axvline(portfolio_values_corr.mean() + portfolio_std_corr, color='g', ls='dashed', lw=1.5, label='Mean + 1 Std: %4.2f' % (portfolio_values_corr.mean() + portfolio_std_corr))
+axs[1, 2].axvline(portfolio_values_corr.mean() - portfolio_std_corr, color='g', ls='dashed', lw=1.5, label='Mean - 1 Std: %4.2f' % (portfolio_values_corr.mean() - portfolio_std_corr))
+axs[1, 2].set_title('Portfolio Values with Std Dev with Correlation')
+axs[1, 2].set_xlabel('Present Value')
+axs[1, 2].set_ylabel('Frequency')
+axs[1, 2].set_xlim(0, 80)
+axs[1, 2].set_ylim(0, 5000)
+axs[1, 2].legend()
 
 #? 시각화를 위한 레이아웃 조정
 plt.tight_layout()
-plt.show()
+plt.savefig('assets/portfolio_option_analysis.png')
