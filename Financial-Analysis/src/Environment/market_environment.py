@@ -98,6 +98,6 @@ class MarketEnvironment():
     Args:
       env (MarketEnvironment): 병합할 다른 MarketEnvironment 객체
     """
-    self.constants.update(env.contants)
+    self.constants.update(env.constants)
     self.lists.update(env.lists)
     self.curves.update(env.curves)
