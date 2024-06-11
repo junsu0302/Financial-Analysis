@@ -9,6 +9,9 @@ from Utils.constant_short_rate import ConstantShortRate
 from Simulation.jump_diffusion import JumpDiffusion
 from Valuation.mcs_european import MCSEuropean
 
+from Utils.derivatives_position import DerivativesPosition
+from Utils.derivatives_portfolio import DerivativesPortfolio
+
 # TODO: 옵션 데이터
 
 #? 데이터 읽기
@@ -146,6 +149,7 @@ option_selection['MODEL'] = np.array(list(calculate_model_values(opt_local).valu
 option_selection['ERRORS_EUR'] = (option_selection['MODEL'] - option_selection['CF_CLOSE'])
 option_selection['ERRORS_%'] = (option_selection['ERRORS_EUR'] / option_selection['CF_CLOSE']) * 100
 
+"""
 #? 시각화 설정
 fix, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, figsize=(10, 10))
 strikes = option_selection['STRIKE_PRC'].values
@@ -170,3 +174,61 @@ ax3.set_xlabel('Strikes', fontsize=12)
 #? 시각화
 plt.tight_layout()
 plt.show()
+"""
+
+# TODO: 포트폴리오 가치 평가
+
+#? 옵션 포지션 모형
+
+me_dax = MarketEnvironment('me_dax', pricing_date)
+me_dax.add_constant('initial_value', initial_value)
+me_dax.add_constant('final_date', pricing_date)
+me_dax.add_constant('currency', 'EUR')
+
+me_dax.add_constant('volatility', opt_local[0])
+me_dax.add_constant('lambda', opt_local[1])
+me_dax.add_constant('mu', opt_local[2])
+me_dax.add_constant('delta', opt_local[3])
+
+me_dax.add_constant('model', 'jd')
+
+payoff_func = 'np.maximum(strike - instrument_values, 0)'
+
+shared_env = MarketEnvironment('shared_env', pricing_date)
+shared_env.add_constant('maturity', maturity)
+shared_env.add_constant('currency', 'EUR')
+
+option_positions = {}
+option_environment = {}
+for option in option_selection.index:
+  option_environment[option] = MarketEnvironment('am_put_%d' % option, pricing_date)
+  strike = option_selection['STRIKE_PRC'].loc[option]
+  option_environment[option].add_constant('strike', strike)
+  option_environment[option].add_environment(shared_env)
+  option_positions['am_put_%d' % strike] = DerivativesPosition('am_put_%d' % strike,
+                                                               quantity=np.random.randint(10, 50),
+                                                               underlying='dax_model',
+                                                               market_env=option_environment[option],
+                                                               otype='American',
+                                                               payoff_func=payoff_func)
+  
+
+#? 옵션 포트폴리오
+val_env = MarketEnvironment('val_env', pricing_date)
+val_env.add_constant('starting_date', pricing_date)
+val_env.add_constant('final_date', pricing_date)
+val_env.add_constant('frequency', 'B')
+val_env.add_constant('paths', 25000)
+val_env.add_curve('discount_curve', csr)
+
+underlyings = {'dax_model' : me_dax}
+
+portfolio = DerivativesPortfolio('portfolio', option_positions, val_env, underlyings)
+
+results = portfolio.get_statistics(fixed_seed=True)
+
+print(results.round(1))
+
+print('-' * 70)
+
+print(results[['pos_value', 'pos_delta', 'pos_vega']].sum().round(1))
