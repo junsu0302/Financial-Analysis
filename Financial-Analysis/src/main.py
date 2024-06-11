@@ -178,53 +178,57 @@ plt.show()
 
 # TODO: 포트폴리오 가치 평가
 
-#? 옵션 포지션 모형
-
+#? 시장 환경 재설정
 me_dax = MarketEnvironment('me_dax', pricing_date)
-me_dax.add_constant('initial_value', initial_value)
-me_dax.add_constant('final_date', pricing_date)
-me_dax.add_constant('currency', 'EUR')
+me_dax.add_constant('initial_value', initial_value) #* 초기 자산 가격 설정
+me_dax.add_constant('final_date', pricing_date)     #* 평가일 설정
+me_dax.add_constant('currency', 'EUR')              #* 통화 설정
 
-me_dax.add_constant('volatility', opt_local[0])
-me_dax.add_constant('lambda', opt_local[1])
-me_dax.add_constant('mu', opt_local[2])
-me_dax.add_constant('delta', opt_local[3])
+#? 최적화된 파라미터 값을 사용하여 파라미터 설정
+me_dax.add_constant('volatility', opt_local[0]) #* 변동성 설정
+me_dax.add_constant('lambda', opt_local[1])     #* 점프 빈도 설정
+me_dax.add_constant('mu', opt_local[2])         #* 점프 크기 평균 설정
+me_dax.add_constant('delta', opt_local[3])      #* 점프 크기 표준편차 설정
 
-me_dax.add_constant('model', 'jd')
+me_dax.add_constant('model', 'jd') #* 모델 유형 설정
 
-payoff_func = 'np.maximum(strike - instrument_values, 0)'
+payoff_func = 'np.maximum(strike - instrument_values, 0)' #* 옵션의 페이오프 함수 정의
 
+#? 공유 환경 설정
 shared_env = MarketEnvironment('shared_env', pricing_date)
-shared_env.add_constant('maturity', maturity)
-shared_env.add_constant('currency', 'EUR')
+shared_env.add_constant('maturity', maturity)               #* 옵션 만기일 설정
+shared_env.add_constant('currency', 'EUR')                  #* 통화 설정
 
+#? 각 옵션에 대한 시장 환경 객체 생성 및 설정
 option_positions = {}
 option_environment = {}
 for option in option_selection.index:
+  #? 개별 옵션 환경 설정
   option_environment[option] = MarketEnvironment('am_put_%d' % option, pricing_date)
   strike = option_selection['STRIKE_PRC'].loc[option]
-  option_environment[option].add_constant('strike', strike)
-  option_environment[option].add_environment(shared_env)
-  option_positions['am_put_%d' % strike] = DerivativesPosition('am_put_%d' % strike,
-                                                               quantity=np.random.randint(10, 50),
-                                                               underlying='dax_model',
-                                                               market_env=option_environment[option],
-                                                               otype='American',
-                                                               payoff_func=payoff_func)
+  option_environment[option].add_constant('strike', strike) #* 행사가 설정
+  option_environment[option].add_environment(shared_env)    #* 공유 환경 설정
   
-
-#? 옵션 포트폴리오
+  #? 옵션 포지션 생성 및 추가
+  option_positions['am_put_%d' % strike] = DerivativesPosition('am_put_%d' % strike,
+                                                               quantity=np.random.randint(10, 50),    #* 포지션 수량
+                                                               underlying='dax_model',                #* 기초 자산 모델
+                                                               market_env=option_environment[option], #* 옵션의 시장 환경
+                                                               otype='American',                      #* 옵션 타입
+                                                               payoff_func=payoff_func)               #* 페이오프 함수
+  
+#? 평가 환경 설정
 val_env = MarketEnvironment('val_env', pricing_date)
-val_env.add_constant('starting_date', pricing_date)
-val_env.add_constant('final_date', pricing_date)
-val_env.add_constant('frequency', 'B')
-val_env.add_constant('paths', 25000)
-val_env.add_curve('discount_curve', csr)
+val_env.add_constant('starting_date', pricing_date)  #* 시작일 설정
+val_env.add_constant('final_date', pricing_date)     #* 평가일 설정
+val_env.add_constant('frequency', 'B')               #* 빈도 설정
+val_env.add_constant('paths', 25000)                 #* 경로 수 설정
+val_env.add_curve('discount_curve', csr)             #* 할인 곡선 추가
 
-underlyings = {'dax_model' : me_dax}
+underlyings = {'dax_model' : me_dax} #* 기초 자산 모델
 
+#? 포트폴리오 생성 및 통계 정보 계산
 portfolio = DerivativesPortfolio('portfolio', option_positions, val_env, underlyings)
-
 results = portfolio.get_statistics(fixed_seed=True)
 
 print(results.round(1))
